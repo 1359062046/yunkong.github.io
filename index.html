@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>遥控器演示</title>
+    <style>
+        /* 全局样式重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+            gap: 40px;
+        }
+
+        /* 辅助按钮容器样式 */
+        .helper-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        /* 按钮组样式 */
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* 辅助按钮样式 */
+        .helper-button {
+            padding: 15px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            white-space: nowrap;
+            width: 200px; /* 加宽按钮 */
+        }
+
+        /* 功能说明块样式 */
+        .info-block {
+            width: 200px; /* 与按钮宽度一致 */
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            font-size: 14px;
+            line-height: 1.5;
+            display: none;
+        }
+
+        .info-block.active {
+            display: block;
+        }
+
+        .info-block h4 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .info-block p {
+            margin: 5px 0;
+            color: #666;
+        }
+
+        .info-block .button-action {
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        .helper-button:hover {
+            background-color: #45a049;
+            transform: scale(1.05);
+        }
+
+        .helper-button:active {
+            background-color: #3e8e41;
+            transform: scale(0.95);
+        }
+
+        /* 遥控器主体样式 */
+        .remote-control {
+            width: 220px;
+            height: 700px;
+            background-color: #000;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        /* 点阵屏样式 */
+        .dot-matrix {
+            width: 120px;
+            height: 160px;
+            background-color: #000; /* 与遥控器外壳同色 */
+            border-radius: 10px;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(7, 1fr);
+            gap: 5px;
+            padding: 15px;
+            margin-bottom: 40px;
+        }
+
+        .dot {
+            background-color: #000; /* 不亮时与外壳同色 */
+            border-radius: 50%;
+            transition: background-color 0.2s ease;
+        }
+
+        .dot.lit {
+            background-color: #00f;
+        }
+
+        /* 按钮区域样式 */
+        .buttons {
+            display: flex;
+            gap: 30px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .button-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* 圆形按钮样式 */
+        .round-button {
+            width: 60px;
+            height: 60px;
+            background-color: #111;
+            border: none;
+            border-radius: 50%;
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: inset 0 2px 5px rgba(255, 255, 255, 0.1);
+        }
+
+        .round-button:hover {
+            background-color: #222;
+            transform: scale(1.05);
+        }
+
+        .round-button:active {
+            background-color: #333;
+            transform: scale(0.95);
+        }
+
+        /* 右侧按钮列特殊样式 */
+        .button-column:nth-child(2) {
+            gap: 20px;
+        }
+
+        /* 加减按钮容器样式 */
+        .plus-minus-container {
+            display: flex;
+            flex-direction: column;
+            width: 60px;
+            height: 140px;
+            background-color: #111;
+            border-radius: 30px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 5px rgba(255, 255, 255, 0.1);
+        }
+
+        /* 加减按钮样式 */
+        .plus-button, .minus-button {
+            flex: 1;
+            background-color: transparent;
+            border: none;
+            color: #fff;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        /* 分隔线 */
+        .divider {
+            width: 80%;
+            height: 1px;
+            background-color: #333;
+            margin: 0 auto;
+        }
+
+        /* 所有按钮添加阴影效果 */
+        .round-button, .plus-minus-container {
+            box-shadow: inset 0 2px 5px rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <!-- 辅助按钮 -->
+    <div class="helper-buttons">
+        <div class="button-group">
+            <button class="helper-button" id="config-helper-button" data-info="channel">通道管理</button>
+            <div class="info-block" id="info-block-channel"></div>
+        </div>
+        <div class="button-group">
+            <button class="helper-button" id="pairing-helper-button" data-info="door">门窗配对</button>
+            <div class="info-block" id="info-block-door"></div>
+        </div>
+        <div class="button-group">
+            <button class="helper-button" id="microwave-on-button" data-info="microwave-on">启用微波开关</button>
+            <div class="info-block" id="info-block-microwave-on"></div>
+        </div>
+        <div class="button-group">
+            <button class="helper-button" id="microwave-off-button" data-info="microwave-off">关闭微波开关</button>
+            <div class="info-block" id="info-block-microwave-off"></div>
+        </div>
+    </div>
+    
+    <div class="remote-control">
+        <!-- 点阵屏 -->
+        <div class="dot-matrix">
+            <!-- 生成7x5的点阵 -->
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+
+        <!-- 按钮区域 -->
+        <div class="buttons">
+            <!-- 第1列按钮：开、停、关 -->
+            <div class="button-column">
+                <button class="round-button" id="on-button">开</button>
+                <button class="round-button" id="stop-button">停</button>
+                <button class="round-button" id="off-button">关</button>
+            </div>
+
+            <!-- 第2列按钮：+、-、A -->
+            <div class="button-column">
+                <!-- 加减按钮容器 -->
+                <div class="plus-minus-container">
+                    <button class="plus-button" id="plus-button">+</button>
+                    <div class="divider"></div>
+                    <button class="minus-button" id="minus-button">-</button>
+                </div>
+                <!-- A按钮 -->
+                <button class="round-button" id="a-button">A</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 获取所有点阵
+        const dots = document.querySelectorAll('.dot');
+        
+        // 设备状态枚举
+        const DEVICE_STATES = {
+            STANDBY: 'standby',  // 待机
+            CONFIG: 'config',    // 通道配置
+            SUCCESS: 'success',  // 操作成功
+            FAILURE: 'failure',  // 操作失败
+            PAIRING: 'pairing',  // 配对中
+            SENDING: 'sending'   // 发送指令中
+        };
+        
+        // 通道状态枚举
+        const CHANNEL_STATES = {
+            ENABLED: 'enabled',  // 启用
+            DISABLED: 'disabled',// 停用
+            CLOSED: 'closed'     // 关闭
+        };
+        
+        // 全局状态变量
+        let currentState = DEVICE_STATES.STANDBY;    // 当前设备状态（初始为待机，永远不进入息屏）
+        let currentChannel = 1;                      // 当前通道（1-9）
+        let channels = [];                           // 通道状态数组
+        let configTimeout = null;                    // 配置超时定时器
+        let successTimeout = null;                   // 操作成功/失败/发送指令超时定时器
+        let blinkInterval = null;                    // 闪烁效果定时器
+        let pairingInterval = null;                  // 配对动画定时器
+        let pairingTimeout = null;                   // 配对超时定时器
+        let sendingInterval = null;                  // 发送指令动画定时器
+        let longPressTimer = null;                   // 长按定时器
+        let isLongPress = false;                     // 是否为长按
+        
+        // 初始化通道状态（1-9个通道，默认启用通道1）
+        function initChannels() {
+            channels = [];
+            for (let i = 1; i <= 9; i++) {
+                channels[i] = i === 1 ? CHANNEL_STATES.ENABLED : CHANNEL_STATES.CLOSED;
+            }
+        }
+        
+        // 清除所有点阵的点亮状态
+        function clearDots() {
+            dots.forEach(dot => {
+                dot.classList.remove('lit');
+            });
+        }
+        
+        // 点亮点阵（根据坐标）
+        function lightDot(row, col) {
+            const index = row * 5 + col;
+            if (dots[index]) {
+                dots[index].classList.add('lit');
+            }
+        }
+        
+        // 显示数字（1-9）
+        function displayNumber(num) {
+            clearDots();
+            
+            // 5列7行点阵数字显示映射（根据用户提供的图案重新设计）
+            const numberMap = {
+                1: [[1,3], [2,2], [2,3], [3,1], [3,3], [4,3], [5,3], [6,3], [7,1], [7,2], [7,3], [7,4], [7,5]],
+                2: [[1,2], [1,3], [1,4], [2,1], [2,5], [3,5], [4,4], [5,3], [6,2], [7,1], [7,2], [7,3], [7,4], [7,5]],
+                3: [[1,2], [1,3], [1,4], [2,1], [2,5], [3,5], [4,2], [4,3], [4,4], [5,5], [6,1], [6,5], [7,2], [7,3], [7,4]],
+                4: [[1,4], [2,3], [2,4], [3,2], [3,4], [4,1], [4,4], [5,1], [5,2], [5,3], [5,4], [5,5], [6,4], [7,4]],
+                5: [[1,1], [1,2], [1,3], [1,4], [1,5], [2,1], [3,1], [3,2], [3,3], [3,4], [4,5], [5,5], [6,1], [6,5], [7,2], [7,3], [7,4]],
+                6: [[1,2], [1,3], [1,4], [2,1], [3,1], [4,1], [4,2], [4,3], [4,4], [5,1], [5,5], [6,1], [6,5], [7,2], [7,3], [7,4]],
+                7: [[1,1], [1,2], [1,3], [1,4], [1,5], [2,5], [3,4], [4,3], [5,3], [6,3], [7,3]],
+                8: [[1,2], [1,3], [1,4], [2,1], [2,5], [3,1], [3,5], [4,2], [4,3], [4,4], [5,1], [5,5], [6,1], [6,5], [7,2], [7,3], [7,4]],
+                9: [[1,2], [1,3], [1,4], [2,1], [2,5], [3,1], [3,5], [4,2], [4,3], [4,4], [4,5], [5,5], [6,1], [6,5], [7,2], [7,3], [7,4]]
+            };
+            
+            if (numberMap[num]) {
+                numberMap[num].forEach(([row, col]) => {
+                    lightDot(row - 1, col - 1); // 行列都从0开始
+                });
+            }
+        }
+        
+        // 显示对号（根据用户提供的图案重新设计）
+        function displayCheckmark() {
+            clearDots();
+            
+            // 对号点阵坐标
+            const checkmarkCoords = [
+                [1, 4], [2, 3], [3, 0], [3, 2], [4, 1]
+            ];
+            
+            checkmarkCoords.forEach(([row, col]) => {
+                lightDot(row, col); // 行列都从0开始
+            });
+        }
+        
+        // 显示操作失败（根据用户提供的图案）
+        function displayFailure() {
+            clearDots();
+            
+            // 操作失败点阵坐标
+            const failureCoords = [
+                [1, 0], [1, 4], [2, 1], [2, 3], [3, 2], [4, 1], [4, 3], [5, 0], [5, 4]
+            ];
+            
+            failureCoords.forEach(([row, col]) => {
+                lightDot(row, col); // 行列都从0开始
+            });
+        }
+        
+        // 显示配对中图案
+        function displayPairing() {
+            clearDots();
+            
+            // 配对中点阵坐标
+            const pairingCoords = [
+                [1, 3], [2, 1], [2, 4], [3, 2], [3, 4], [4, 0], [4, 2], [4, 4], [5, 2], [5, 4], [6, 1], [6, 4], [7, 3]
+            ];
+            
+            pairingCoords.forEach(([row, col]) => {
+                lightDot(row - 1, col); // 行从1开始转换为0开始，列从0开始
+            });
+        }
+        
+        // 配对动画效果（按照用户指定的顺序逐颗点亮，然后循环）
+        function startPairingAnimation() {
+            // 用户提供的点亮顺序：（2,2）、（3,2）、（4,2）、（5,3）、（5,4）、（5,5）、（4,6）、（3,6）、（2,6）、（1,5）、（1,4）、（1,3）
+            // 转换为代码索引：Y=用户Y-1，X=用户X-1
+            const correctOrder = [
+                [1, 1], // （2,2） → Y=1, X=1
+                [1, 2], // （3,2） → Y=1, X=2
+                [1, 3], // （4,2） → Y=1, X=3
+                [2, 4], // （5,3） → Y=2, X=4
+                [3, 4], // （5,4） → Y=3, X=4
+                [4, 4], // （5,5） → Y=4, X=4
+                [5, 3], // （4,6） → Y=5, X=3
+                [5, 2], // （3,6） → Y=5, X=2
+                [5, 1], // （2,6） → Y=5, X=1
+                [4, 0], // （1,5） → Y=4, X=0
+                [3, 0], // （1,4） → Y=3, X=0
+                [2, 0]  // （1,3） → Y=2, X=0
+            ];
+            
+            // 生成所有点亮步骤，逐颗添加
+            const pairingSteps = [];
+            for (let i = 0; i < correctOrder.length; i++) {
+                // 前i+1颗点的坐标
+                const stepPoints = correctOrder.slice(0, i + 1);
+                pairingSteps.push(stepPoints);
+            }
+            
+            let currentStep = 0;
+            
+            // 动画步骤：依次显示每个步骤，每步显示0.5秒
+            const animationInterval = setInterval(() => {
+                // 熄灭所有点阵
+                clearDots();
+                
+                // 点亮当前步骤的所有点
+                pairingSteps[currentStep].forEach(([row, col]) => {
+                    const dotIndex = row * 5 + col;
+                    if (dots[dotIndex]) {
+                        dots[dotIndex].classList.add('lit');
+                    }
+                });
+                
+                // 切换到下一步
+                currentStep = (currentStep + 1) % pairingSteps.length;
+            }, 500); // 每步显示0.5秒
+            
+            return animationInterval;
+        }
+        
+        // 闪烁效果
+        function startBlinking() {
+            let isLit = true;
+            blinkInterval = setInterval(() => {
+                if (isLit) {
+                    displayNumber(currentChannel); // 显示当前通道
+                } else {
+                    clearDots();
+                }
+                isLit = !isLit;
+            }, 500); // 闪烁间隔调整为0.5秒
+        }
+        
+        // 停止闪烁
+        function stopBlinking() {
+            if (blinkInterval) {
+                clearInterval(blinkInterval);
+                blinkInterval = null;
+            }
+        }
+        
+
+        
+        // 查找首个开启的通道
+        function findFirstEnabledChannel() {
+            for (let i = 1; i <= 9; i++) {
+                if (channels[i] === CHANNEL_STATES.ENABLED) {
+                    return i;
+                }
+            }
+            return 1; // 默认返回通道1
+        }
+        
+        // 进入待机状态
+        function enterStandbyState() {
+            currentState = DEVICE_STATES.STANDBY;
+            clearAllTimers();
+            // 显示首个开启的通道序号
+            currentChannel = findFirstEnabledChannel();
+            displayNumber(currentChannel);
+        }
+        
+        // 进入通道配置状态
+        function enterConfigState() {
+            currentState = DEVICE_STATES.CONFIG;
+            clearAllTimers();
+            startBlinking();
+            
+            // 60秒无操作后先显示操作失败，再返回待机
+            configTimeout = setTimeout(() => {
+                enterFailureState();
+            }, 60000);
+        }
+        
+        // 进入操作成功状态
+        function enterSuccessState() {
+            currentState = DEVICE_STATES.SUCCESS;
+            clearAllTimers();
+            displayCheckmark();
+            
+            // 3秒后返回待机
+            successTimeout = setTimeout(() => {
+                enterStandbyState();
+            }, 3000);
+        }
+        
+        // 进入操作失败状态
+        function enterFailureState() {
+            currentState = DEVICE_STATES.FAILURE;
+            clearAllTimers();
+            displayFailure();
+            
+            // 3秒后返回待机
+            successTimeout = setTimeout(() => {
+                enterStandbyState();
+            }, 3000);
+        }
+        
+        // 清除所有定时器
+        function clearAllTimers() {
+            stopBlinking();
+            if (configTimeout) {
+                clearTimeout(configTimeout);
+                configTimeout = null;
+            }
+            if (successTimeout) {
+                clearTimeout(successTimeout);
+                successTimeout = null;
+            }
+        }
+        
+        // 获取下一个启用的通道（+方向）
+        function getNextEnabledChannel() {
+            let nextChannel = currentChannel;
+            do {
+                nextChannel++;
+                if (nextChannel > 9) nextChannel = 1;
+            } while (channels[nextChannel] !== CHANNEL_STATES.ENABLED && nextChannel !== currentChannel);
+            return nextChannel;
+        }
+        
+        // 获取上一个启用的通道（-方向）
+        function getPrevEnabledChannel() {
+            let prevChannel = currentChannel;
+            do {
+                prevChannel--;
+                if (prevChannel < 1) prevChannel = 9;
+            } while (channels[prevChannel] !== CHANNEL_STATES.ENABLED && prevChannel !== currentChannel);
+            return prevChannel;
+        }
+        
+        // 待机状态下切换通道
+        function switchChannel(direction) {
+            if (currentState === DEVICE_STATES.STANDBY) {
+                if (direction === 'up') {
+                    currentChannel = getNextEnabledChannel();
+                } else {
+                    currentChannel = getPrevEnabledChannel();
+                }
+                displayNumber(currentChannel);
+            }
+        }
+        
+        // 配置状态下切换通道
+        function configSwitchChannel(direction) {
+            if (currentState === DEVICE_STATES.CONFIG) {
+                if (direction === 'up') {
+                    currentChannel++;
+                    if (currentChannel > 9) currentChannel = 1;
+                } else {
+                    currentChannel--;
+                    if (currentChannel < 1) currentChannel = 9;
+                }
+                // 更新闪烁显示
+                stopBlinking();
+                startBlinking();
+                
+                // 重置60秒超时
+                clearTimeout(configTimeout);
+                configTimeout = setTimeout(() => {
+                    enterStandbyState();
+                }, 60000);
+            }
+        }
+        
+        // 修改通道状态
+        function updateChannelState(state) {
+            if (currentState === DEVICE_STATES.CONFIG) {
+                channels[currentChannel] = state;
+                enterSuccessState();
+            }
+        }
+        
+        // 唤醒设备（设备永远处于待机或其他活跃状态，无需唤醒）
+        function wakeDevice() {
+            // 设备永远处于待机或其他活跃状态，无需唤醒操作
+        }
+        
+        // 长按检测
+        function startLongPressDetection() {
+            isLongPress = false;
+            longPressTimer = setTimeout(() => {
+                isLongPress = true;
+                enterConfigState();
+            }, 5000);
+        }
+        
+        // 停止长按检测
+        function stopLongPressDetection() {
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+        }
+        
+        // 功能说明数据
+        const infoData = {
+            channel: {
+                title: '通道管理',
+                description: '1、长按【开】、【关】键7秒，进入通道管理模式；<br>2、选择通道后，点击【开】即启用通道<br>3、选择通道后，点击【停】即停用通道，此时不会清除通道密钥<br>4、选择通道后，点击【关】即关闭通道，此时会重置通道密钥',
+                buttonAction: '开、关键同时按下7秒'
+            },
+            door: {
+                title: '门窗配对',
+                description: '1、长按【A】键7秒，进入门窗配对模式<br>2、配对时遥控器向外广播通道密钥，持续30s<br>3、点击【A】退出广播，回到待机状态',
+                buttonAction: 'A键按下7秒'
+            },
+            'microwave-on': {
+                title: '启用微波开关',
+                description: '1、长按【开】、【A】键7秒，启用微波开关',
+                buttonAction: '开、A键同时按下7秒'
+            },
+            'microwave-off': {
+                title: '关闭微波开关',
+                description: '1、长按【关】、【A】键7秒，关闭微波开关',
+                buttonAction: '关、A键同时按下7秒'
+            }
+        };
+        
+        // 显示功能说明
+        function showInfo(infoType) {
+            const infoBlock = document.getElementById(`info-block-${infoType}`);
+            const info = infoData[infoType];
+            
+            if (info) {
+                infoBlock.innerHTML = `
+                    <h4>${info.title}</h4>
+                    <p>${info.description}</p>
+                    <p><strong>按钮操作：</strong><span class="button-action">${info.buttonAction}</span></p>
+                `;
+                infoBlock.classList.add('active');
+            }
+        }
+        
+        // 隐藏功能说明
+        function hideInfo(infoType) {
+            const infoBlock = document.getElementById(`info-block-${infoType}`);
+            infoBlock.classList.remove('active');
+        }
+        
+        // 隐藏所有功能说明
+        function hideAllInfo() {
+            Object.keys(infoData).forEach(infoType => {
+                hideInfo(infoType);
+            });
+        }
+        
+        // 功能说明交互
+        function setupInfoInteraction() {
+            const helperButtons = document.querySelectorAll('.helper-button');
+            
+            helperButtons.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    // 阻止事件冒泡，避免触发唤醒功能
+                    e.stopPropagation();
+                    
+                    const infoType = button.dataset.info;
+                    const infoBlock = document.getElementById(`info-block-${infoType}`);
+                    const isActive = infoBlock.classList.contains('active');
+                    
+                    // 点击按钮时始终显示说明，除非点击其他按钮才会切换
+                    if (!isActive) {
+                        hideAllInfo();
+                        showInfo(infoType);
+                    }
+                    // 再次点击同一个按钮不会关闭说明
+                });
+            });
+        }
+        
+        // 按钮事件处理
+        function setupButtonEvents() {
+            // 所有按钮的点击事件（用于唤醒）
+            const allButtons = document.querySelectorAll('button');
+            allButtons.forEach(button => {
+                button.addEventListener('click', wakeDevice);
+            });
+            
+            // 辅助按钮：直接进入通道配置状态
+            const configHelperButton = document.getElementById('config-helper-button');
+            configHelperButton.addEventListener('click', () => {
+                enterConfigState();
+            });
+            
+            // 辅助按钮：直接进入配对状态
+            const pairingHelperButton = document.getElementById('pairing-helper-button');
+            pairingHelperButton.addEventListener('click', () => {
+                enterPairingState();
+            });
+            
+            // 辅助按钮：启用微波开关
+            const microwaveOnButton = document.getElementById('microwave-on-button');
+            microwaveOnButton.addEventListener('click', () => {
+                enterSendingState();
+            });
+            
+            // 辅助按钮：关闭微波开关
+            const microwaveOffButton = document.getElementById('microwave-off-button');
+            microwaveOffButton.addEventListener('click', () => {
+                enterSendingState();
+            });
+            
+            // 开、关按钮的长按事件
+            const onButton = document.getElementById('on-button');
+            const offButton = document.getElementById('off-button');
+            
+            // 开按钮
+            onButton.addEventListener('mousedown', startLongPressDetection);
+            onButton.addEventListener('mouseup', stopLongPressDetection);
+            onButton.addEventListener('mouseleave', stopLongPressDetection);
+            onButton.addEventListener('click', () => {
+                if (currentState === DEVICE_STATES.CONFIG && !isLongPress) {
+                    updateChannelState(CHANNEL_STATES.ENABLED);
+                } else if (currentState === DEVICE_STATES.STANDBY && !isLongPress) {
+                    // 待机状态下点击开按钮，触发发送指令状态
+                    enterSendingState();
+                }
+            });
+            
+            // 停按钮
+            const stopButton = document.getElementById('stop-button');
+            stopButton.addEventListener('click', () => {
+                if (currentState === DEVICE_STATES.CONFIG) {
+                    updateChannelState(CHANNEL_STATES.DISABLED);
+                } else if (currentState === DEVICE_STATES.STANDBY) {
+                    // 待机状态下点击停按钮，触发发送指令状态
+                    enterSendingState();
+                }
+            });
+            
+            // 关按钮
+            offButton.addEventListener('mousedown', startLongPressDetection);
+            offButton.addEventListener('mouseup', stopLongPressDetection);
+            offButton.addEventListener('mouseleave', stopLongPressDetection);
+            offButton.addEventListener('click', () => {
+                if (currentState === DEVICE_STATES.CONFIG && !isLongPress) {
+                    updateChannelState(CHANNEL_STATES.CLOSED);
+                } else if (currentState === DEVICE_STATES.STANDBY && !isLongPress) {
+                    // 待机状态下点击关按钮，触发发送指令状态
+                    enterSendingState();
+                }
+            });
+            
+            // +按钮
+            const plusButton = document.getElementById('plus-button');
+            plusButton.addEventListener('click', () => {
+                if (currentState === DEVICE_STATES.STANDBY) {
+                    switchChannel('up');
+                } else if (currentState === DEVICE_STATES.CONFIG) {
+                    configSwitchChannel('up');
+                }
+            });
+            
+            // -按钮
+            const minusButton = document.getElementById('minus-button');
+            minusButton.addEventListener('click', () => {
+                if (currentState === DEVICE_STATES.STANDBY) {
+                    switchChannel('down');
+                } else if (currentState === DEVICE_STATES.CONFIG) {
+                    configSwitchChannel('down');
+                }
+            });
+            
+            // A按钮：长按5秒发起配对，配对状态下点击返回待机，待机状态下点击触发发送指令
+            const aButton = document.getElementById('a-button');
+            aButton.addEventListener('mousedown', startLongPressDetection);
+            aButton.addEventListener('mouseup', stopLongPressDetection);
+            aButton.addEventListener('mouseleave', stopLongPressDetection);
+            aButton.addEventListener('click', () => {
+                if (currentState === DEVICE_STATES.PAIRING) {
+                    // 配对状态下点击A返回待机
+                    enterStandbyState();
+                } else if (currentState === DEVICE_STATES.STANDBY && !isLongPress) {
+                    // 待机状态下点击A按钮，触发发送指令状态
+                    enterSendingState();
+                }
+            });
+            
+            // 设置功能说明交互
+            setupInfoInteraction();
+        }
+        
+        // 清除所有定时器
+        function clearAllTimers() {
+            stopBlinking();
+            if (configTimeout) {
+                clearTimeout(configTimeout);
+                configTimeout = null;
+            }
+            if (successTimeout) {
+                clearTimeout(successTimeout);
+                successTimeout = null;
+            }
+            if (pairingInterval) {
+                clearInterval(pairingInterval);
+                pairingInterval = null;
+            }
+            if (pairingTimeout) {
+                clearTimeout(pairingTimeout);
+                pairingTimeout = null;
+            }
+            if (sendingInterval) {
+                clearInterval(sendingInterval);
+                sendingInterval = null;
+            }
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+        }
+        
+        // 发送指令动画效果（向上移动的箭头，每0.5秒上移一格，共3秒）
+        function startSendingAnimation() {
+            // 箭头图案的相对坐标（相对于中心点）
+            const arrowPattern = [[0, 0], [1, -1], [1, 1], [2, -2], [2, 2]]; // 中心点和四个角
+            
+            let currentRow = 4; // 初始中心点行位置（第5行，索引4）
+            let moveCount = 0; // 移动次数
+            const maxMoves = 5; // 最大移动次数（2.5秒 / 0.5秒 = 5次）
+            
+            // 动画步骤：每0.5秒向上移动一格
+            const animationInterval = setInterval(() => {
+                // 熄灭所有点阵
+                clearDots();
+                
+                // 点亮当前位置的箭头
+                arrowPattern.forEach(([rowOffset, colOffset]) => {
+                    const row = currentRow + rowOffset;
+                    const col = 2 + colOffset; // 中心点列位置固定为第3列（索引2）
+                    // 确保点在点阵范围内
+                    if (row >= 0 && row < 7 && col >= 0 && col < 5) {
+                        const dotIndex = row * 5 + col;
+                        if (dots[dotIndex]) {
+                            dots[dotIndex].classList.add('lit');
+                        }
+                    }
+                });
+                
+                // 向上移动一格
+                currentRow--;
+                moveCount++;
+                
+                // 达到最大移动次数后停止动画
+                if (moveCount >= maxMoves) {
+                    clearInterval(animationInterval);
+                }
+            }, 500); // 每0.5秒移动一次
+            
+            return animationInterval;
+        }
+        
+        // 进入发送指令状态
+        function enterSendingState() {
+            currentState = DEVICE_STATES.SENDING;
+            clearAllTimers();
+            
+            // 开始发送指令动画
+            sendingInterval = startSendingAnimation();
+            
+            // 3秒后返回待机（2.5秒动画 + 0.5秒保持）
+            successTimeout = setTimeout(() => {
+                enterStandbyState();
+            }, 3000);
+        }
+        
+        // 进入配对中状态
+        function enterPairingState() {
+            currentState = DEVICE_STATES.PAIRING;
+            clearAllTimers();
+            
+            // 开始配对动画
+            pairingInterval = startPairingAnimation();
+            
+            // 30秒超时后返回待机
+            pairingTimeout = setTimeout(() => {
+                enterStandbyState();
+            }, 30000);
+        }
+        
+        // 初始化
+        function init() {
+            initChannels();
+            setupButtonEvents();
+            // 初始化后直接进入待机状态并显示通道序号
+            enterStandbyState();
+            // 默认显示通道管理的说明
+            setTimeout(() => {
+                showInfo('channel');
+            }, 100);
+        }
+        
+        // 页面加载完成后初始化
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
